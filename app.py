@@ -23,7 +23,12 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = '#PASSWORD'
+
+with open('password.txt') as f:
+    content = f.readlines()
+password = content[0]
+app.config['MYSQL_DATABASE_PASSWORD'] = password
+
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -116,20 +121,26 @@ def unauthorized_handler():
 #you can specify specific methods (GET/POST) in function header instead of inside the functions as seen earlier
 @app.route("/register", methods=['GET'])
 def register():
-	return render_template('register.html', supress='True')
+	return render_template('register.html', supress=True)
 
 @app.route("/register", methods=['POST'])
 def register_user():
+	contributions = 0
 	try:
 		email=request.form.get('email')
 		password=request.form.get('password')
+		first_name=request.form.get('first_name')
+		last_name=request.form.get('last_name')
+		hometown=request.form.get('hometown')
+		gender=request.form.get('gender')
+		date_of_birth=request.form.get('date_of_birth')
 	except:
 		print("couldn't find all tokens") #this prints to shell, end users will not see this (all print statements go to shell)
 		return flask.redirect(flask.url_for('register'))
 	cursor = conn.cursor()
 	test =  isEmailUnique(email)
 	if test:
-		print(cursor.execute("INSERT INTO Users (email, password) VALUES ('{0}', '{1}')".format(email, password)))
+		print(cursor.execute("INSERT INTO Users (email, first_name, last_name, password, date_of_birth, hometown, gender, contributions) VALUES ('{0}', '{1}','{2}', '{3}','{4}', '{5}','{6}', '{7}')".format(email, first_name, last_name, password, date_of_birth, hometown, gender, contributions)))
 		conn.commit()
 		#log user in
 		user = User()
@@ -180,7 +191,8 @@ def upload_file():
 		caption = request.form.get('caption')
 		photo_data =imgfile.read()
 		cursor = conn.cursor()
-		cursor.execute('''INSERT INTO Pictures (imgdata, user_id, caption) VALUES (%s, %s, %s )''' ,(photo_data,uid, caption))
+		cursor.execute('INSERT INTO Pictures (imgdata, user_id, caption) VALUES (%s, %s, %s )' ,(photo_data,uid, caption))
+		cursor.execute("UPDATE Users SET contributions = contributions + 1 WHERE user_id = '{0}'".format(uid))
 		conn.commit()
 		return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded!', photos=getUsersPhotos(uid),base64=base64)
 	#The method is GET so we return a  HTML form to upload the a photo.
