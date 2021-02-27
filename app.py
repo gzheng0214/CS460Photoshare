@@ -200,11 +200,27 @@ def upload_file():
 		cursor.execute('INSERT INTO Pictures (imgdata, user_id, caption, album_id) VALUES (%s, %s, %s, %s)' ,(photo_data,uid, caption, album_id))
 		cursor.execute("UPDATE Users SET contributions = contributions + 1 WHERE user_id = '{0}'".format(uid))
 		conn.commit()
-		return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded to album!', photos=getUsersPhotos(uid),base64=base64)
+		return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded to album!')
 	#The method is GET so we return a  HTML form to upload the a photo.
 	else:
 		return render_template('upload.html', albums=getUsersAlbums(uid))
 #end photo uploading code
+
+@app.route('/browsePhotos', methods=['GET'])
+@flask_login.login_required
+def browse_photos():
+		uid = getUserIdFromEmail(flask_login.current_user.id)
+		return render_template('hello.html', name=flask_login.current_user.id, photos=getUsersPhotos(uid),base64=base64)
+
+def getAllPhotos():
+	cursor = conn.cursor()
+	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures")
+	return cursor.fetchall() #NOTE list of tuples, [(imgdata, pid), ...]
+
+@app.route('/browsePublic', methods=['GET'])
+def browse_public():
+		return render_template('hello.html', photos=getAllPhotos(),base64=base64)
+
  
 @app.route('/createAlbum', methods=['GET', 'POST'])
 @flask_login.login_required
@@ -235,6 +251,26 @@ def delete_album():
 		return render_template('hello.html', name=flask_login.current_user.id, message='Album deleted!', albums=getUsersAlbums(uid))
 	else:
 		return render_template('/delete.html', albums=getUsersAlbums(uid))
+
+def getPhotoAlbum(album_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE album_id = '{0}'".format(album_id))
+	return cursor.fetchall()
+
+def getAlbumName(album_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT name FROM Albums WHERE album_id = '{0}'".format(album_id))
+	return cursor.fetchall()
+
+@app.route('/browseAlbum', methods=['GET', 'POST'])
+@flask_login.login_required
+def browse_Album():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	if request.method == 'POST':
+		album_id = request.form.get('album')
+		return render_template('/albumImages.html', name=flask_login.current_user.id, album=getAlbumName(album_id)[0][0], photos=getPhotoAlbum(album_id), base64=base64)
+	else:
+		return render_template('/browse.html', albums=getUsersAlbums(uid))
 
 def getUsersAlbums(uid):
 	cursor = conn.cursor()

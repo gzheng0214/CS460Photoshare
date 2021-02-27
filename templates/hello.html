@@ -2,7 +2,11 @@
 <head>
   <style>
     table, th, td {
-      border: 1px solid black
+      border: 1px solid black;
+    }
+
+    img {
+      width: 250px;
     }
   </style>
   </head>
@@ -15,11 +19,21 @@
   <h1>Hello {{ name }}!</h1>
 {% endif %}
 
-{% if photos %}
+{% if photos and name %}
 <h2>Here are your photos</h2>
     <ul>
     {% for photo in photos %}
 
+        <li>{{photo[2]}}<br />
+        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+{% if photos and not name %}
+<h2>Here are all the photos</h2>
+    <ul>
+    {% for photo in photos %}
         <li>{{photo[2]}}<br />
         <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
     {% endfor %}
@@ -46,8 +60,11 @@
 
 <ul>
 <li><a href='/upload'>Upload a photo</a></li>
+<li><a href='/browsePhotos'>Browse photos</a></li>
+<li><a href='/browsePublic'>Browse public photos</a></li>
 <li><a href='/createAlbum'>Create an album</a></li>
 <li><a href='/deleteAlbum'>Delete an album</a></li>
+<li><a href='/browseAlbum'>Browse your albums</a></li>
 <li><a href='/logout'>Logout</a></li>
 <li><a href='/'>Home</a></li>
 

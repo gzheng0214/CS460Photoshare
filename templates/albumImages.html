@@ -1,0 +1,22 @@
+<head>
+    <title>Here are your pictures</title>
+</head>
+    <body>
+        {% if photos %}
+                <div class="title">
+            <h1>Here are the pictures associated with album {{album}}</h1>
+        </div>
+    <ul>
+    {% for photo in photos %}
+        <li>{{photo[2]}}<br />
+        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+    {% endfor %}
+    </ul>
+{% endif %}
+            {% if not photos %}
+                                <div class="title">
+            <h1>You have no photos associated with album {{album}}<h1>
+        </div>
+            {% endif %}
+            <a href="/">Go Home</a>
+    </body>
