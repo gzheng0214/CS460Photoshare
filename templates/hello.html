@@ -1,4 +1,11 @@
 <!-- author ben lawson (balawson@bu.edu) -->
+<head>
+  <style>
+    table, th, td {
+      border: 1px solid black
+    }
+  </style>
+  </head>
 <!doctype html>
 {% if message %}
   <h4>{{message}}!</h4>
@@ -29,4 +36,30 @@
 <li><a href='/upload'>Upload a photo</a> </li>
 <li><a href='/logout'>Logout</a></li>
 <li><a href='/'>Home</a></li>
+
+{% if contributions %}
+<h3>
+  Top 10 Contributors
+  </h3>
+<table>
+  <tr>
+    <th>
+      First Name
+    </th>
+    <th>
+      Last Name
+    </th>
+    <th>
+      Contributions
+    </th>
+  </tr>
+  {% for row in contributions %}
+   <tr>
+  {% for cell in row %}
+    <td>{{cell}}</td>
+  {% endfor %}
+  </tr>
+  {% endfor %}
+  </table>
 </ul>
+{% endif %}

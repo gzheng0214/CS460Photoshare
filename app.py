@@ -200,12 +200,16 @@ def upload_file():
 		return render_template('upload.html')
 #end photo uploading code
 
+# Gets the top 10 user contributions in descending order so we can display them
+def getUserContributions():
+	cursor = conn.cursor()
+	cursor.execute("SELECT first_name, last_name, contributions FROM Users ORDER BY contributions DESC")
+	return cursor.fetchmany(size=10)
 
 #default page
 @app.route("/", methods=['GET'])
 def hello():
-	return render_template('hello.html', message='Welecome to Photoshare')
-
+	return render_template('hello.html', message='Welecome to Photoshare', contributions=getUserContributions())
 
 if __name__ == "__main__":
 	#this is invoked when in the shell  you run
