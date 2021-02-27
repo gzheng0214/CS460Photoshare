@@ -125,7 +125,6 @@ def register():
 
 @app.route("/register", methods=['POST'])
 def register_user():
-	contributions = 0
 	try:
 		email=request.form.get('email')
 		password=request.form.get('password')
@@ -140,7 +139,7 @@ def register_user():
 	cursor = conn.cursor()
 	test =  isEmailUnique(email)
 	if test:
-		print(cursor.execute("INSERT INTO Users (email, first_name, last_name, password, date_of_birth, hometown, gender, contributions) VALUES ('{0}', '{1}','{2}', '{3}','{4}', '{5}','{6}', '{7}')".format(email, first_name, last_name, password, date_of_birth, hometown, gender, contributions)))
+		print(cursor.execute("INSERT INTO Users (email, first_name, last_name, password, date_of_birth, hometown, gender) VALUES ('{0}', '{1}','{2}', '{3}','{4}', '{5}','{6}')".format(email, first_name, last_name, password, date_of_birth, hometown, gender)))
 		conn.commit()
 		#log user in
 		user = User()
@@ -199,6 +198,25 @@ def upload_file():
 	else:
 		return render_template('upload.html')
 #end photo uploading code
+
+@app.route('/createAlbum', methods=['GET', 'POST'])
+@flask_login.login_required
+def create_album():
+	if request.method == 'POST':
+		uid = getUserIdFromEmail(flask_login.current_user.id)
+		name = request.form.get('name')
+		cursor = conn.cursor()
+		cursor.execute('INSERT INTO Albums (user_id, name, date_of_creation) VALUES (%s, %s, NOW())' ,(uid,name))
+		conn.commit()
+		return render_template('hello.html', name=flask_login.current_user.id, message='Album Created!', albums=getUsersAlbums(uid))
+	else:
+		return render_template('/create.html')
+
+def getUsersAlbums(uid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT name, date_of_creation FROM Albums WHERE user_id = '{0}'".format(uid))
+	return cursor.fetchall() #NOTE list of tuples, [(imgdata, pid), ...]
+
 
 # Gets the top 10 user contributions in descending order so we can display them
 def getUserContributions():

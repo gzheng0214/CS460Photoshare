@@ -26,6 +26,18 @@
     </ul>
 {% endif %}
 
+{% if albums %}
+<h2>Here are your albums</h2>
+    <ul>
+    {% for album in albums %}
+
+        <li>{{album[0]}}</br>
+          {{album[1]}}
+        </li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
 {% if message is none %}
   <p>You should <a href='/login'>login!</a></p>
 {% else %}
