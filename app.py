@@ -198,7 +198,7 @@ def upload_file():
 	else:
 		return render_template('upload.html')
 #end photo uploading code
-
+ 
 @app.route('/createAlbum', methods=['GET', 'POST'])
 @flask_login.login_required
 def create_album():
