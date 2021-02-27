@@ -1,0 +1,15 @@
+.user-list {
+    display: inline-block;
+    border: 5px solid lightblue;
+    width: 300px;
+    height: 500px;
+    overflow: scroll;
+}
+
+.friends-list {
+    display: inline-block;
+    border: 5px solid lightgreen;
+    width: 300px;
+    height: 500px;
+    overflow: scroll;
+}

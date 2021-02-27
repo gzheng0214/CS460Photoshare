@@ -1,0 +1,42 @@
+<!doctype html>
+<link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/styles.css') }}">
+<body>
+    <h1>Hello! This is the friends page.</h1>
+    <a href='/'>Home</a>
+
+    <div class="wrapper">
+        {% if users %}
+        <div class="user-list">
+            <h2>Here are some users on the site.</h2>
+            {% for usr in users %}
+            <div class="user-list-item">
+            <p>{{usr}}   </p>
+            
+            <form action="{{ url_for( 'add_friend' )}}" method="post">
+                <button type="submit" name="add-friend-button" value="{{usr}}" >Add Friend</button>
+            </form>
+            
+            </div>
+            {% endfor %}
+        </div>    
+        {% endif %}
+        
+        <div class="friends-list">
+            {% if friends %}
+                <h2>Here are your current friends.</h2>
+                {% for frnd in friends %}
+                <div class="user-list-item">
+                <p>{{frnd}}</p>           
+                </div>
+                {% endfor %}
+            {% else %}
+                <h2>You have no friends yet. Add friends from the list on the left.</h2>
+            {% endif %}
+        </div>
+        
+    </div>
+    {% if message %}
+    <h4>{{message}}</h4>
+    {% endif %}
+
+</body>

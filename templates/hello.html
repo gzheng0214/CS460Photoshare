@@ -1,0 +1,81 @@
+<!-- author ben lawson (balawson@bu.edu) -->
+<head>
+  <style>
+    table, th, td {
+      border: 1px solid black
+    }
+  </style>
+  </head>
+<!doctype html>
+{% if message %}
+  <h4>{{message}}!</h4>
+{% endif %}
+<title>Photoshare</title>
+{% if name %}
+  <h1>Hello {{ name }}!</h1>
+{% endif %}
+
+{% if photos %}
+<h2>Here are your photos</h2>
+    <ul>
+    {% for photo in photos %}
+
+        <li>{{photo[2]}}<br>
+        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+{% if albums %}
+<h2>Here are your albums</h2>
+    <ul>
+    {% for album in albums %}
+
+        <li>{{album[0]}}</br>
+          {{album[1]}}
+        </li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+{% if message is none %}
+  <p>You should <a href='/login'>login!</a></p>
+{% else %}
+  <p> Go to <a href='/profile'>profile?</a></p>
+{% endif %}
+
+<ul>
+<li><a href='/upload'>Upload a photo</a> </li>
+<li><a href='/logout'>Logout</a></li>
+<li><a href='/test'>TestLink</a></li>
+{% if name %}
+<li><a href='/friends'>Search and Add Friends</a></li>
+{% endif %}
+<li><a href='/'>Home</a></li>
+
+{% if contributions %}
+<h3>
+  Top 10 Contributors
+  </h3>
+<table>
+  <tr>
+    <th>
+      First Name
+    </th>
+    <th>
+      Last Name
+    </th>
+    <th>
+      Contributions
+    </th>
+  </tr>
+  {% for row in contributions %}
+   <tr>
+  {% for cell in row %}
+    <td>{{cell}}</td>
+  {% endfor %}
+  </tr>
+  {% endfor %}
+  </table>
+</ul>
+{% endif %}
