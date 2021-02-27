@@ -170,10 +170,16 @@ def isEmailUnique(email):
 		return True
 #end login code
 
+def isAlbumUnique(album):
+	if cursor.execute("SELECT name FROM Albums WHERE name = '{0}'".format(album)):
+		return False
+	else:
+		return True
+
 @app.route('/profile')
 @flask_login.login_required
 def protected():
-	return render_template('hello.html', name=flask_login.current_user.id, message="Here's your profile")
+	return render_template('hello.html', name=flask_login.current_user.id, message="Here's your profile", albums=getUsersAlbums(getUserIdFromEmail(flask_login.current_user.id)))
 
 #begin photo uploading code
 # photos uploaded using base64 encoding so they can be directly embeded in HTML
@@ -184,19 +190,20 @@ def allowed_file(filename):
 @app.route('/upload', methods=['GET', 'POST'])
 @flask_login.login_required
 def upload_file():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
 	if request.method == 'POST':
-		uid = getUserIdFromEmail(flask_login.current_user.id)
+		album_id = request.form.get("album");
 		imgfile = request.files['photo']
 		caption = request.form.get('caption')
 		photo_data =imgfile.read()
 		cursor = conn.cursor()
-		cursor.execute('INSERT INTO Pictures (imgdata, user_id, caption) VALUES (%s, %s, %s )' ,(photo_data,uid, caption))
+		cursor.execute('INSERT INTO Pictures (imgdata, user_id, caption, album_id) VALUES (%s, %s, %s, %s)' ,(photo_data,uid, caption, album_id))
 		cursor.execute("UPDATE Users SET contributions = contributions + 1 WHERE user_id = '{0}'".format(uid))
 		conn.commit()
-		return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded!', photos=getUsersPhotos(uid),base64=base64)
+		return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded to album!', photos=getUsersPhotos(uid),base64=base64)
 	#The method is GET so we return a  HTML form to upload the a photo.
 	else:
-		return render_template('upload.html')
+		return render_template('upload.html', albums=getUsersAlbums(uid))
 #end photo uploading code
  
 @app.route('/createAlbum', methods=['GET', 'POST'])
@@ -206,15 +213,32 @@ def create_album():
 		uid = getUserIdFromEmail(flask_login.current_user.id)
 		name = request.form.get('name')
 		cursor = conn.cursor()
-		cursor.execute('INSERT INTO Albums (user_id, name, date_of_creation) VALUES (%s, %s, NOW())' ,(uid,name))
-		conn.commit()
-		return render_template('hello.html', name=flask_login.current_user.id, message='Album Created!', albums=getUsersAlbums(uid))
+		test =  isAlbumUnique(name)
+		if (test):
+			cursor.execute('INSERT INTO Albums (user_id, name, date_of_creation) VALUES (%s, %s, NOW())' ,(uid,name))
+			conn.commit()
+			return render_template('hello.html', name=flask_login.current_user.id, message='Album Created!', albums=getUsersAlbums(uid))
+		else:
+			return flask.redirect(flask.url_for('create_album'))
 	else:
 		return render_template('/create.html')
 
+@app.route('/deleteAlbum', methods=['GET', 'POST'])
+@flask_login.login_required
+def delete_album():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	if request.method == 'POST':
+		album_id = request.form.get('album')
+		cursor = conn.cursor()
+		cursor.execute("DELETE FROM Albums WHERE album_id = '{0}'".format(album_id))
+		conn.commit()
+		return render_template('hello.html', name=flask_login.current_user.id, message='Album deleted!', albums=getUsersAlbums(uid))
+	else:
+		return render_template('/delete.html', albums=getUsersAlbums(uid))
+
 def getUsersAlbums(uid):
 	cursor = conn.cursor()
-	cursor.execute("SELECT name, date_of_creation FROM Albums WHERE user_id = '{0}'".format(uid))
+	cursor.execute("SELECT name, date_of_creation, album_id FROM Albums WHERE user_id = '{0}'".format(uid))
 	return cursor.fetchall() #NOTE list of tuples, [(imgdata, pid), ...]
 
 
