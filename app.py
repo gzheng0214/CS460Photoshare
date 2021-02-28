@@ -170,10 +170,23 @@ def isEmailUnique(email):
 		return True
 #end login code
 
+<<<<<<< HEAD
 @app.route('/profile')
 @flask_login.login_required
 def protected():
 	return render_template('hello.html', name=flask_login.current_user.id, message="Here's your profile")
+=======
+def isAlbumUnique(album):
+	if cursor.execute("SELECT name FROM Albums WHERE name = '{0}'".format(album)):
+		return False
+	else:
+		return True
+
+@app.route('/profile')
+@flask_login.login_required
+def protected():
+	return render_template('hello.html', name=flask_login.current_user.id, message="Here's your profile", albums=getUsersAlbums(getUserIdFromEmail(flask_login.current_user.id)))
+>>>>>>> dd5f7799b0da7f3f06274dee071da56a8daf2bff
 
 #begin photo uploading code
 # photos uploaded using base64 encoding so they can be directly embeded in HTML
@@ -184,12 +197,19 @@ def allowed_file(filename):
 @app.route('/upload', methods=['GET', 'POST'])
 @flask_login.login_required
 def upload_file():
+<<<<<<< HEAD
 	if request.method == 'POST':
 		uid = getUserIdFromEmail(flask_login.current_user.id)
+=======
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	if request.method == 'POST':
+		album_id = request.form.get("album");
+>>>>>>> dd5f7799b0da7f3f06274dee071da56a8daf2bff
 		imgfile = request.files['photo']
 		caption = request.form.get('caption')
 		photo_data =imgfile.read()
 		cursor = conn.cursor()
+<<<<<<< HEAD
 		cursor.execute('INSERT INTO Pictures (imgdata, user_id, caption) VALUES (%s, %s, %s )' ,(photo_data,uid, caption))
 		cursor.execute("UPDATE Users SET contributions = contributions + 1 WHERE user_id = '{0}'".format(uid))
 		conn.commit()
@@ -198,6 +218,32 @@ def upload_file():
 	else:
 		return render_template('upload.html')
 #end photo uploading code
+=======
+		cursor.execute('INSERT INTO Pictures (imgdata, user_id, caption, album_id) VALUES (%s, %s, %s, %s)' ,(photo_data,uid, caption, album_id))
+		cursor.execute("UPDATE Users SET contributions = contributions + 1 WHERE user_id = '{0}'".format(uid))
+		conn.commit()
+		return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded to album!')
+	#The method is GET so we return a  HTML form to upload the a photo.
+	else:
+		return render_template('upload.html', albums=getUsersAlbums(uid))
+#end photo uploading code
+
+@app.route('/browsePhotos', methods=['GET'])
+@flask_login.login_required
+def browse_photos():
+		uid = getUserIdFromEmail(flask_login.current_user.id)
+		return render_template('hello.html', name=flask_login.current_user.id, photos=getUsersPhotos(uid),base64=base64)
+
+def getAllPhotos():
+	cursor = conn.cursor()
+	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures")
+	return cursor.fetchall() #NOTE list of tuples, [(imgdata, pid), ...]
+
+@app.route('/browsePublic', methods=['GET'])
+def browse_public():
+		return render_template('hello.html', photos=getAllPhotos(),base64=base64)
+
+>>>>>>> dd5f7799b0da7f3f06274dee071da56a8daf2bff
  
 @app.route('/createAlbum', methods=['GET', 'POST'])
 @flask_login.login_required
@@ -206,6 +252,7 @@ def create_album():
 		uid = getUserIdFromEmail(flask_login.current_user.id)
 		name = request.form.get('name')
 		cursor = conn.cursor()
+<<<<<<< HEAD
 		cursor.execute('INSERT INTO Albums (user_id, name, date_of_creation) VALUES (%s, %s, NOW())' ,(uid,name))
 		conn.commit()
 		return render_template('hello.html', name=flask_login.current_user.id, message='Album Created!', albums=getUsersAlbums(uid))
@@ -215,6 +262,54 @@ def create_album():
 def getUsersAlbums(uid):
 	cursor = conn.cursor()
 	cursor.execute("SELECT name, date_of_creation FROM Albums WHERE user_id = '{0}'".format(uid))
+=======
+		test =  isAlbumUnique(name)
+		if (test):
+			cursor.execute('INSERT INTO Albums (user_id, name, date_of_creation) VALUES (%s, %s, NOW())' ,(uid,name))
+			conn.commit()
+			return render_template('hello.html', name=flask_login.current_user.id, message='Album Created!', albums=getUsersAlbums(uid))
+		else:
+			return flask.redirect(flask.url_for('create_album'))
+	else:
+		return render_template('/create.html')
+
+@app.route('/deleteAlbum', methods=['GET', 'POST'])
+@flask_login.login_required
+def delete_album():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	if request.method == 'POST':
+		album_id = request.form.get('album')
+		cursor = conn.cursor()
+		cursor.execute("DELETE FROM Albums WHERE album_id = '{0}'".format(album_id))
+		conn.commit()
+		return render_template('hello.html', name=flask_login.current_user.id, message='Album deleted!', albums=getUsersAlbums(uid))
+	else:
+		return render_template('/delete.html', albums=getUsersAlbums(uid))
+
+def getPhotoAlbum(album_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE album_id = '{0}'".format(album_id))
+	return cursor.fetchall()
+
+def getAlbumName(album_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT name FROM Albums WHERE album_id = '{0}'".format(album_id))
+	return cursor.fetchall()
+
+@app.route('/browseAlbum', methods=['GET', 'POST'])
+@flask_login.login_required
+def browse_Album():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	if request.method == 'POST':
+		album_id = request.form.get('album')
+		return render_template('/albumImages.html', name=flask_login.current_user.id, album=getAlbumName(album_id)[0][0], photos=getPhotoAlbum(album_id), base64=base64)
+	else:
+		return render_template('/browse.html', albums=getUsersAlbums(uid))
+
+def getUsersAlbums(uid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT name, date_of_creation, album_id FROM Albums WHERE user_id = '{0}'".format(uid))
+>>>>>>> dd5f7799b0da7f3f06274dee071da56a8daf2bff
 	return cursor.fetchall() #NOTE list of tuples, [(imgdata, pid), ...]
 
 
@@ -224,6 +319,7 @@ def getUserContributions():
 	cursor.execute("SELECT first_name, last_name, contributions FROM Users ORDER BY contributions DESC")
 	return cursor.fetchmany(size=10)
 
+<<<<<<< HEAD
 
 # Begin Search+Add Friends Code
 def getEmailFromId( id ):
@@ -342,6 +438,8 @@ def friends():
 # END Search+Add Friends Code
 
 
+=======
+>>>>>>> dd5f7799b0da7f3f06274dee071da56a8daf2bff
 #default page
 @app.route("/", methods=['GET'])
 def hello():

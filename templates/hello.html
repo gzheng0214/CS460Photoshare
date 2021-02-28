@@ -2,7 +2,15 @@
 <head>
   <style>
     table, th, td {
+<<<<<<< HEAD
       border: 1px solid black
+=======
+      border: 1px solid black;
+    }
+
+    img {
+      width: 250px;
+>>>>>>> dd5f7799b0da7f3f06274dee071da56a8daf2bff
     }
   </style>
   </head>
@@ -15,12 +23,30 @@
   <h1>Hello {{ name }}!</h1>
 {% endif %}
 
+<<<<<<< HEAD
 {% if photos %}
+=======
+{% if photos and name %}
+>>>>>>> dd5f7799b0da7f3f06274dee071da56a8daf2bff
 <h2>Here are your photos</h2>
     <ul>
     {% for photo in photos %}
 
+<<<<<<< HEAD
         <li>{{photo[2]}}<br>
+=======
+        <li>{{photo[2]}}<br />
+        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+{% if photos and not name %}
+<h2>Here are all the photos</h2>
+    <ul>
+    {% for photo in photos %}
+        <li>{{photo[2]}}<br />
+>>>>>>> dd5f7799b0da7f3f06274dee071da56a8daf2bff
         <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
     {% endfor %}
     </ul>
@@ -31,7 +57,11 @@
     <ul>
     {% for album in albums %}
 
+<<<<<<< HEAD
         <li>{{album[0]}}</br>
+=======
+        <li>{{album[0]}}<br />
+>>>>>>> dd5f7799b0da7f3f06274dee071da56a8daf2bff
           {{album[1]}}
         </li>
     {% endfor %}
@@ -45,12 +75,22 @@
 {% endif %}
 
 <ul>
+<<<<<<< HEAD
 <li><a href='/upload'>Upload a photo</a> </li>
 <li><a href='/logout'>Logout</a></li>
 <li><a href='/test'>TestLink</a></li>
 {% if name %}
 <li><a href='/friends'>Search and Add Friends</a></li>
 {% endif %}
+=======
+<li><a href='/upload'>Upload a photo</a></li>
+<li><a href='/browsePhotos'>Browse photos</a></li>
+<li><a href='/browsePublic'>Browse public photos</a></li>
+<li><a href='/createAlbum'>Create an album</a></li>
+<li><a href='/deleteAlbum'>Delete an album</a></li>
+<li><a href='/browseAlbum'>Browse your albums</a></li>
+<li><a href='/logout'>Logout</a></li>
+>>>>>>> dd5f7799b0da7f3f06274dee071da56a8daf2bff
 <li><a href='/'>Home</a></li>
 
 {% if contributions %}
@@ -78,4 +118,8 @@
   {% endfor %}
   </table>
 </ul>
+<<<<<<< HEAD
 {% endif %}
+=======
+{% endif %}
+>>>>>>> dd5f7799b0da7f3f06274dee071da56a8daf2bff

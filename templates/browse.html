@@ -1,0 +1,25 @@
+<head>
+    <title>Browse your Albums</title>
+</head>
+    <body>
+        {% if albums %}
+                <div class="title">
+            <h1>Browse your albums</h1>
+        </div>
+            <form method="post" enctype="multipart/form-data" action="/browseAlbum">
+                <label for="album">Select album:</label>
+                <select id="album" name="album">
+                    {% for album in albums %}
+                        <option value="{{album[2]}}">{{album[0]}}</option>
+                    {% endfor %}
+                </select><br />
+                <input type="submit" value="Browse" />
+            </form>
+            {% endif %}
+            {% if not albums %}
+                                <div class="title">
+            <h1>You have no album<h1>
+        </div>
+            {% endif %}
+            <a href="/">Go Home</a>
+    </body>
