@@ -4,9 +4,9 @@
     <body>
         {% if albums %}
                 <div class="title">
-            <h1>Browse your albums</h1>
+            <h1>Browse albums</h1>
         </div>
-            <form method="post" enctype="multipart/form-data" action="/browseAlbum">
+            <form method="post" enctype="multipart/form-data" action="{{action}}">
                 <label for="album">Select album:</label>
                 <select id="album" name="album">
                     {% for album in albums %}

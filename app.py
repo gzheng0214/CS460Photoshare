@@ -270,19 +270,71 @@ def browse_Album():
 		album_id = request.form.get('album')
 		return render_template('/albumImages.html', name=flask_login.current_user.id, album=getAlbumName(album_id)[0][0], photos=getPhotoAlbum(album_id), base64=base64)
 	else:
-		return render_template('/browse.html', albums=getUsersAlbums(uid))
+		return render_template('/browse.html', albums=getUsersAlbums(uid),action="/browseAlbum")
+
+@app.route('/browsePublicAlbums', methods=['GET', 'POST'])
+def browsePublicAlbum():
+	if request.method == 'POST':
+		album_id = request.form.get('album')
+		return render_template('/albumImages.html', album=getAlbumName(album_id)[0][0], photos=getPhotoAlbum(album_id), base64=base64)
+	else:
+		return render_template('/browse.html', albums=getAlbums(), action="/browsePublicAlbums")
 
 def getUsersAlbums(uid):
 	cursor = conn.cursor()
 	cursor.execute("SELECT name, date_of_creation, album_id FROM Albums WHERE user_id = '{0}'".format(uid))
 	return cursor.fetchall() #NOTE list of tuples, [(imgdata, pid), ...]
 
+def getAlbums():
+	cursor = conn.cursor()
+	cursor.execute("SELECT name, date_of_creation, album_id FROM Albums")
+	return cursor.fetchall() #NOTE list of tuples, [(imgdata, pid), ...]
 
 # Gets the top 10 user contributions in descending order so we can display them
 def getUserContributions():
 	cursor = conn.cursor()
 	cursor.execute("SELECT first_name, last_name, contributions FROM Users ORDER BY contributions DESC")
 	return cursor.fetchmany(size=10)
+
+def getPhoto(picture_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT imgdata, picture_id, caption, user_id, likes FROM Pictures WHERE picture_id = '{0}'".format(picture_id))
+	return cursor.fetchone() #NOTE list of tuples, [(imgdata, pid), ...]
+
+@app.route('/photo/<int:num>', methods=['GET', 'POST'])
+@flask_login.login_required
+def photo(num):
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	picture_id = num
+	if request.method == 'POST':
+		if (request.form['submit'] == 'Like'):
+			cursor = conn.cursor()
+			cursor.execute('INSERT INTO has_likes (picture_id, user_id) VALUES (%s, %s)' ,(picture_id, uid))
+			cursor.execute("UPDATE Pictures SET likes = likes + 1 WHERE picture_id = '{0}'".format(picture_id))
+			conn.commit()
+			return render_template('/hello.html', name=flask_login.current_user.id, message="Liked photo!")
+		elif (request.form['submit'] == 'Unlike'):
+			cursor = conn.cursor()
+			cursor.execute("DELETE FROM has_likes WHERE user_id = '{0}' AND picture_id = '{1}'".format(uid, picture_id))
+			cursor.execute("UPDATE Pictures SET likes = likes - 1 WHERE picture_id = '{0}'".format(picture_id))
+			conn.commit()
+			return render_template('/hello.html', name=flask_login.current_user.id, message="Unliked photo!")
+	else:
+		return render_template('/photo.html', photo=getPhoto(picture_id), base64=base64, uid=uid, liked=getLikedUsers(picture_id), button=didUserLike(uid, picture_id))
+
+def didUserLike(user_id, picture_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT hl.user_id FROM has_likes hl WHERE hl.user_id = '{1}' AND hl.picture_id = picture_id = '{0}'".format(picture_id, user_id))
+	length = len(cursor.fetchall()) #NOTE list of tuples, [(imgdata, pid), ...]
+	if (length > 0):
+		return False
+	else:
+		return True
+
+def getLikedUsers(picture_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT u.user_id, u.first_name, u.last_name FROM Users u, has_likes hl WHERE hl.user_id = u.user_id AND hl.picture_id = picture_id = '{0}'".format(picture_id))
+	return cursor.fetchall() #NOTE list of tuples, [(imgdata, pid), ...]
 
 #default page
 @app.route("/", methods=['GET'])
