@@ -2,8 +2,12 @@
 <head>
     <title>Create an account!</title>
 </head>
-{%if not supress%}
+{% with messages = get_flashed_messages() %}
+
+{%if messages%}
+{% for message in messages %}
 <h1> Email already in use! Use another one or <a href="/login">login</a></h1>
+{% endfor %}
 {% endif %}
     <body>
         <div class="title">
@@ -30,3 +34,4 @@
          </div>
     </body>
 <a href='/'>Home</a>
+{% endwith %}

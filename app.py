@@ -10,7 +10,7 @@
 ###################################################
 
 import flask
-from flask import Flask, Response, request, render_template, redirect, url_for
+from flask import Flask, Response, request, render_template, redirect, url_for, flash
 from flaskext.mysql import MySQL
 import flask_login
 
@@ -123,7 +123,7 @@ def unauthorized_handler():
 def register():
 	return render_template('register.html', supress=True)
 
-@app.route("/register", methods=['POST'])
+@app.route("/register", methods=['GET','POST'])
 def register_user():
 	try:
 		email=request.form.get('email')
@@ -148,6 +148,7 @@ def register_user():
 		return render_template('hello.html', name=email, message='Account Created!')
 	else:
 		print("couldn't find all tokens")
+		flash('That email is already taken.')
 		return flask.redirect(flask.url_for('register'))
 
 def getUsersPhotos(uid):
@@ -170,12 +171,6 @@ def isEmailUnique(email):
 		return True
 #end login code
 
-<<<<<<< HEAD
-@app.route('/profile')
-@flask_login.login_required
-def protected():
-	return render_template('hello.html', name=flask_login.current_user.id, message="Here's your profile")
-=======
 def isAlbumUnique(album):
 	if cursor.execute("SELECT name FROM Albums WHERE name = '{0}'".format(album)):
 		return False
@@ -186,7 +181,6 @@ def isAlbumUnique(album):
 @flask_login.login_required
 def protected():
 	return render_template('hello.html', name=flask_login.current_user.id, message="Here's your profile", albums=getUsersAlbums(getUserIdFromEmail(flask_login.current_user.id)))
->>>>>>> dd5f7799b0da7f3f06274dee071da56a8daf2bff
 
 #begin photo uploading code
 # photos uploaded using base64 encoding so they can be directly embeded in HTML
@@ -197,28 +191,13 @@ def allowed_file(filename):
 @app.route('/upload', methods=['GET', 'POST'])
 @flask_login.login_required
 def upload_file():
-<<<<<<< HEAD
-	if request.method == 'POST':
-		uid = getUserIdFromEmail(flask_login.current_user.id)
-=======
 	uid = getUserIdFromEmail(flask_login.current_user.id)
 	if request.method == 'POST':
 		album_id = request.form.get("album");
->>>>>>> dd5f7799b0da7f3f06274dee071da56a8daf2bff
 		imgfile = request.files['photo']
 		caption = request.form.get('caption')
 		photo_data =imgfile.read()
 		cursor = conn.cursor()
-<<<<<<< HEAD
-		cursor.execute('INSERT INTO Pictures (imgdata, user_id, caption) VALUES (%s, %s, %s )' ,(photo_data,uid, caption))
-		cursor.execute("UPDATE Users SET contributions = contributions + 1 WHERE user_id = '{0}'".format(uid))
-		conn.commit()
-		return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded!', photos=getUsersPhotos(uid),base64=base64)
-	#The method is GET so we return a  HTML form to upload the a photo.
-	else:
-		return render_template('upload.html')
-#end photo uploading code
-=======
 		cursor.execute('INSERT INTO Pictures (imgdata, user_id, caption, album_id) VALUES (%s, %s, %s, %s)' ,(photo_data,uid, caption, album_id))
 		cursor.execute("UPDATE Users SET contributions = contributions + 1 WHERE user_id = '{0}'".format(uid))
 		conn.commit()
@@ -243,7 +222,6 @@ def getAllPhotos():
 def browse_public():
 		return render_template('hello.html', photos=getAllPhotos(),base64=base64)
 
->>>>>>> dd5f7799b0da7f3f06274dee071da56a8daf2bff
  
 @app.route('/createAlbum', methods=['GET', 'POST'])
 @flask_login.login_required
@@ -252,17 +230,6 @@ def create_album():
 		uid = getUserIdFromEmail(flask_login.current_user.id)
 		name = request.form.get('name')
 		cursor = conn.cursor()
-<<<<<<< HEAD
-		cursor.execute('INSERT INTO Albums (user_id, name, date_of_creation) VALUES (%s, %s, NOW())' ,(uid,name))
-		conn.commit()
-		return render_template('hello.html', name=flask_login.current_user.id, message='Album Created!', albums=getUsersAlbums(uid))
-	else:
-		return render_template('/create.html')
-
-def getUsersAlbums(uid):
-	cursor = conn.cursor()
-	cursor.execute("SELECT name, date_of_creation FROM Albums WHERE user_id = '{0}'".format(uid))
-=======
 		test =  isAlbumUnique(name)
 		if (test):
 			cursor.execute('INSERT INTO Albums (user_id, name, date_of_creation) VALUES (%s, %s, NOW())' ,(uid,name))
@@ -309,7 +276,6 @@ def browse_Album():
 def getUsersAlbums(uid):
 	cursor = conn.cursor()
 	cursor.execute("SELECT name, date_of_creation, album_id FROM Albums WHERE user_id = '{0}'".format(uid))
->>>>>>> dd5f7799b0da7f3f06274dee071da56a8daf2bff
 	return cursor.fetchall() #NOTE list of tuples, [(imgdata, pid), ...]
 
 
@@ -319,7 +285,6 @@ def getUserContributions():
 	cursor.execute("SELECT first_name, last_name, contributions FROM Users ORDER BY contributions DESC")
 	return cursor.fetchmany(size=10)
 
-<<<<<<< HEAD
 
 # Begin Search+Add Friends Code
 def getEmailFromId( id ):
@@ -389,6 +354,7 @@ def getUserList_notself( user_id ):
 		print( e )
 		return None
 	vals = cursor.fetchall()
+	conn.commit()
 	result = []
 	for i in range(0,len(vals)):
 		x = vals[ i ][0]
@@ -437,9 +403,102 @@ def friends():
 
 # END Search+Add Friends Code
 
+# BEGIN Tags Code
 
-=======
->>>>>>> dd5f7799b0da7f3f06274dee071da56a8daf2bff
+def getDBQuery( query ):
+	print( "IN getDBQuery FUNCTION" )
+	cursor = conn.cursor()
+	try:
+		cursor.execute( query )
+	except (MySQLdb.Error, MySQLdb.Warning) as e:
+		print( e )
+		return None
+	result = cursor.fetchall()
+	conn.commit()
+	return result
+
+
+def getUserTags( user_id ):
+	print( "IN getUserTags FUNCTION" )
+	# First get list of user's photo's ids
+	photo_ids = getDBQuery( "SELECT picture_id FROM Pictures WHERE user_id={0}".format( user_id) )
+	print( photo_ids )
+	# Second get list of tags from has_tags where photo_id is in photo's ids
+	result = []
+	#for i in photo_ids:
+	return ['test_user_tag']
+
+
+def getAllTags():
+	vals = getDBQuery( "SELECT * FROM Tags;" )
+	tags = []
+	for i in vals:
+		tags.append( i[0] ) 
+	print( tags )
+	return tags
+
+@app.route("/browsetags", methods=['GET'])
+def browsetags():
+	user_id = getUserIdFromEmail(flask_login.current_user.id)
+	return render_template( 'browsetags.html', user_tags=getUserTags(user_id), all_tags=getAllTags() )
+
+def getPhotoData( user_id ):
+	print( "IN getPhotoData FUNCTION" )
+	return getDBQuery( "SELECT picture_id, caption FROM Pictures WHERE user_id={0}".format(user_id) )
+
+def tagExists( taglabel ):
+	result = getDBQuery( "SELECT * FROM Tags WHERE tag_label='{0}'".format(taglabel) )
+	if not result:
+		return False
+	return True
+
+def createTag( taglabel ):
+	getDBQuery( "INSERT INTO Tags ( tag_label ) VALUES ('{0}')".format(taglabel) )
+
+def photoHasTag( photo_id, taglabel ):
+	if not getDBQuery( "SELECT * FROM has_tag WHERE picture_id={0} AND tag_label='{1}'".format( photo_id, taglabel ) ):
+		return False
+	return True
+
+def addTagToPhoto( photo_id, taglabel ):
+	getDBQuery( "INSERT INTO has_tag ( picture_id, tag_label ) VALUES ( {0}, '{1}' )".format( photo_id, taglabel ) )
+
+@app.route("/addtags", methods=['GET','POST'])
+def addtags():
+	print( "Hello!" )
+	user_id = getUserIdFromEmail(flask_login.current_user.id)
+	if request.method == 'POST':
+		photo_id = request.form.get('photo')
+		taglabel = request.form.get('taglabel')
+		print( photo_id )
+		print( taglabel )
+		#Check if tag exists
+		if not tagExists( taglabel ): # if not, create it
+			print( "Tag does not exist." )
+			#Create tag!
+			createTag( taglabel )
+		
+		#Check if photo already has tag
+		if photoHasTag( photo_id, taglabel ):
+			print( "Photo already has tag!" )
+			return render_template( 'tags.html', 
+			photos=getPhotoData( user_id ),
+			message="This photo already has that tag!" )
+		else:
+			print( "Photo does not have this tag yet!" )
+			addTagToPhoto( photo_id, taglabel )
+			return render_template( 'tags.html', 
+			photos=getPhotoData( user_id ),
+			message="Tag successfully added!" )
+		# If yes, send message to user saying photo already has this tag
+		# If not, add tag to photo and send success message to user
+		
+
+	return render_template( 'tags.html', photos=getPhotoData( user_id ) )
+
+# End Tags Code
+
+
 #default page
 @app.route("/", methods=['GET'])
 def hello():

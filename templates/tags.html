@@ -1,0 +1,17 @@
+<!doctype html>
+<h1>Add Tags to Your Photos</h1>
+<a href='/'>Home</a>
+{% if message %}
+    <h5>{{message}}</h5>
+{% endif %}
+<form method="post" enctype="multipart/form-data" action="/addtags">
+    <label for="photo">Select a Photo:</label>
+    <select id="photo" name="photo" required='true'>
+        {% for photo in photos %}
+        <option value="{{photo[0]}}">{{photo[1]}}</option>
+        {% endfor %}
+    </select>
+    <label for="taglabel">Enter a tag:</label>
+    <input type="text" name="taglabel" required='true' /><br />
+    <input type="submit" value="Add Tag" />
+</form>
