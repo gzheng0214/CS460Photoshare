@@ -170,12 +170,6 @@ def isEmailUnique(email):
 		return True
 #end login code
 
-def isAlbumUnique(album):
-	if cursor.execute("SELECT name FROM Albums WHERE name = '{0}'".format(album)):
-		return False
-	else:
-		return True
-
 @app.route('/profile')
 @flask_login.login_required
 def protected():
@@ -229,13 +223,9 @@ def create_album():
 		uid = getUserIdFromEmail(flask_login.current_user.id)
 		name = request.form.get('name')
 		cursor = conn.cursor()
-		test =  isAlbumUnique(name)
-		if (test):
-			cursor.execute('INSERT INTO Albums (user_id, name, date_of_creation) VALUES (%s, %s, NOW())' ,(uid,name))
-			conn.commit()
-			return render_template('hello.html', name=flask_login.current_user.id, message='Album Created!', albums=getUsersAlbums(uid))
-		else:
-			return flask.redirect(flask.url_for('create_album'))
+		cursor.execute('INSERT INTO Albums (user_id, name, date_of_creation) VALUES (%s, %s, NOW())' ,(uid,name))
+		conn.commit()
+		return render_template('hello.html', name=flask_login.current_user.id, message='Album Created!', albums=getUsersAlbums(uid))
 	else:
 		return render_template('/create.html')
 
@@ -312,13 +302,13 @@ def photo(num):
 			cursor.execute('INSERT INTO has_likes (picture_id, user_id) VALUES (%s, %s)' ,(picture_id, uid))
 			cursor.execute("UPDATE Pictures SET likes = likes + 1 WHERE picture_id = '{0}'".format(picture_id))
 			conn.commit()
-			return render_template('/hello.html', name=flask_login.current_user.id, message="Liked photo!")
+			return flask.redirect(request.path)
 		elif (request.form['submit'] == 'Unlike'):
 			cursor = conn.cursor()
 			cursor.execute("DELETE FROM has_likes WHERE user_id = '{0}' AND picture_id = '{1}'".format(uid, picture_id))
 			cursor.execute("UPDATE Pictures SET likes = likes - 1 WHERE picture_id = '{0}'".format(picture_id))
 			conn.commit()
-			return render_template('/hello.html', name=flask_login.current_user.id, message="Unliked photo!")
+			return flask.redirect(request.path)
 		elif (request.form['submit'] == 'Comment'):
 			comment = request.form.get('comment')
 			cursor = conn.cursor()
@@ -326,11 +316,11 @@ def photo(num):
 				cursor.execute("INSERT INTO comments (comment, user_id, picture_id, date) VALUES (%s, %s, %s, NOW())", (comment, uid, picture_id))
 				cursor.execute("UPDATE Users SET contributions = contributions + 1 WHERE user_id = '{0}'".format(uid))
 				conn.commit()
-				return render_template('/hello.html', name=flask_login.current_user.id, message="Commented!")
+				return flask.redirect(request.path)
 			else:
 				cursor.execute("INSERT INTO comments (comment, user_id, picture_id, date) VALUES (%s, NULL, %s, NOW())", (comment, picture_id))
 				conn.commit()
-				return render_template('/hello.html', message="Commented!")
+				return flask.redirect(request.path)
 
 	else:
 		if (flask_login.current_user.is_authenticated):
@@ -360,7 +350,7 @@ def getLikedUsers(picture_id):
 #default page
 @app.route("/", methods=['GET'])
 def hello():
-	return render_template('hello.html', message='Welecome to Photoshare', contributions=getUserContributions())
+	return render_template('hello.html', message='Welcome to Photoshare', contributions=getUserContributions())
 
 if __name__ == "__main__":
 	#this is invoked when in the shell  you run
