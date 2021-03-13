@@ -302,9 +302,9 @@ def getPhoto(picture_id):
 	return cursor.fetchone() #NOTE list of tuples, [(imgdata, pid), ...]
 
 @app.route('/photo/<int:num>', methods=['GET', 'POST'])
-@flask_login.login_required
 def photo(num):
-	uid = getUserIdFromEmail(flask_login.current_user.id)
+	if (flask_login.current_user.is_authenticated):
+		uid = getUserIdFromEmail(flask_login.current_user.id)
 	picture_id = num
 	if request.method == 'POST':
 		if (request.form['submit'] == 'Like'):
@@ -319,21 +319,42 @@ def photo(num):
 			cursor.execute("UPDATE Pictures SET likes = likes - 1 WHERE picture_id = '{0}'".format(picture_id))
 			conn.commit()
 			return render_template('/hello.html', name=flask_login.current_user.id, message="Unliked photo!")
+		elif (request.form['submit'] == 'Comment'):
+			comment = request.form.get('comment')
+			cursor = conn.cursor()
+			if (flask_login.current_user.is_authenticated):
+				cursor.execute("INSERT INTO comments (comment, user_id, picture_id, date) VALUES (%s, %s, %s, NOW())", (comment, uid, picture_id))
+				cursor.execute("UPDATE Users SET contributions = contributions + 1 WHERE user_id = '{0}'".format(uid))
+				conn.commit()
+				return render_template('/hello.html', name=flask_login.current_user.id, message="Commented!")
+			else:
+				cursor.execute("INSERT INTO comments (comment, user_id, picture_id, date) VALUES (%s, NULL, %s, NOW())", (comment, picture_id))
+				conn.commit()
+				return render_template('/hello.html', message="Commented!")
+
 	else:
-		return render_template('/photo.html', photo=getPhoto(picture_id), base64=base64, uid=uid, liked=getLikedUsers(picture_id), button=didUserLike(uid, picture_id))
+		if (flask_login.current_user.is_authenticated):
+			return render_template('/photo.html', photo=getPhoto(picture_id), base64=base64, uid=uid, liked=getLikedUsers(picture_id), button=didUserLike(uid, picture_id), comments=getComments(picture_id))
+		else:
+			return render_template('/photo.html', photo=getPhoto(picture_id), base64=base64, liked=getLikedUsers(picture_id),comments=getComments(picture_id))
+
+def getComments(picture_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT comment, date, user_id FROM comments WHERE picture_id = '{0}' ORDER BY date ASC".format(picture_id))
+	return cursor.fetchall()
 
 def didUserLike(user_id, picture_id):
 	cursor = conn.cursor()
-	cursor.execute("SELECT hl.user_id FROM has_likes hl WHERE hl.user_id = '{1}' AND hl.picture_id = picture_id = '{0}'".format(picture_id, user_id))
+	cursor.execute("SELECT hl.user_id FROM has_likes hl WHERE hl.user_id = '{1}' AND hl.picture_id = '{0}'".format(picture_id, user_id))
 	length = len(cursor.fetchall()) #NOTE list of tuples, [(imgdata, pid), ...]
-	if (length > 0):
+	if (length == 1):
 		return False
 	else:
 		return True
 
 def getLikedUsers(picture_id):
 	cursor = conn.cursor()
-	cursor.execute("SELECT u.user_id, u.first_name, u.last_name FROM Users u, has_likes hl WHERE hl.user_id = u.user_id AND hl.picture_id = picture_id = '{0}'".format(picture_id))
+	cursor.execute("SELECT u.user_id, u.first_name, u.last_name FROM Users u, has_likes hl WHERE hl.user_id = u.user_id AND hl.picture_id = '{0}'".format(picture_id))
 	return cursor.fetchall() #NOTE list of tuples, [(imgdata, pid), ...]
 
 #default page
