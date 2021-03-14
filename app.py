@@ -293,11 +293,7 @@ def getEmailFromId( id ):
 	print( "IN getEmailFromId function" )
 	cursor = conn.cursor()
 	query = "SELECT email FROM Users WHERE user_id={0};".format( id )
-	try:
-		cursor.execute( query )
-	except (MySQLdb.Error, MySQLdb.Warning) as e:
-		print( e )
-		return None
+	cursor.execute( query )
 	vals = cursor.fetchall()
 	conn.commit()
 	return vals[0][0]
@@ -317,12 +313,7 @@ def getFriendsList( user_id ):
 	print(user_id)
 	cursor = conn.cursor()
 	query = "SELECT * FROM has_friends WHERE user1={0} OR user2={1}".format(user_id, user_id)
-	try:
-		cursor.execute(query)
-	except (MySQLdb.Error, MySQLdb.Warning) as e:
-		print( e )
-		return None
-
+	cursor.execute(query)
 	vals = cursor.fetchall()
 	conn.commit()
 	result = []
@@ -335,11 +326,7 @@ def getFriendsList( user_id ):
 def checkFriendExists( u1, u2 ):
 	cursor = conn.cursor()
 	print( "Checking that friends '{0}' and '{1}' exist:".format( u1, u2 ) )
-	try:
-		cursor.execute( "SELECT * FROM has_friends WHERE user1='{0}' AND user2='{1}'".format( u1, u2 ) )
-	except (MySQLdb.Error, MySQLdb.Warning) as e:
-		print( e )
-		return None
+	cursor.execute( "SELECT * FROM has_friends WHERE user1='{0}' AND user2='{1}'".format( u1, u2 ) )
 
 	if not cursor.fetchall():
 		return 0	
@@ -350,11 +337,7 @@ def getUserList_notself( user_id ):
 	print( "IN getUserList_notself FUNCTION" )
 	cursor = conn.cursor()
 	query = "SELECT email FROM Users WHERE user_id != {0}".format(user_id)
-	try:
-		cursor.execute(query)
-	except (MySQLdb.Error, MySQLdb.Warning) as e:
-		print( e )
-		return None
+	cursor.execute(query)
 	vals = cursor.fetchall()
 	conn.commit()
 	result = []
@@ -410,11 +393,7 @@ def friends():
 def getDBQuery( query ):
 	print( "IN getDBQuery FUNCTION" )
 	cursor = conn.cursor()
-	try:
-		cursor.execute( query )
-	except (MySQLdb.Error, MySQLdb.Warning) as e:
-		print( e )
-		return None
+	cursor.execute( query )
 	result = cursor.fetchall()
 	conn.commit()
 	return result
@@ -519,8 +498,9 @@ def getMostPopularTags():
 
 def getMostPopularTags1():
 	#Generate list of the most popular tags ( make list of 10 tags ) on the website
-	print( "Now in getMostPopularTags() function!" )
-	return getDBQuery(  "SELECT tag_label, COUNT(*) FROM has_tag GROUP BY tag_label ASC LIMIT 0, 10"  )
+	cursor = conn.cursor()
+	cursor.execute("SELECT tag_label, COUNT(*) AS tagCount FROM has_tag GROUP BY tag_label ORDER BY tagCount DESC")
+	return cursor.fetchmany(size=10)
 
 # End Tags Code
 
@@ -613,9 +593,18 @@ def getLikedUsers(picture_id):
 	return cursor.fetchall() #NOTE list of tuples, [(imgdata, pid), ...]
 
 #default page
-@app.route("/", methods=['GET'])
+@app.route("/", methods=['GET', 'POST'])
 def hello():
-	return render_template('hello.html', message='Welecome to Photoshare', contributions=getUserContributions(), popular_tags=getMostPopularTags() )
+	if request.method == 'POST':
+		query = request.form.get('cSearch')
+		return render_template('comments.html', comments=getCSearch(query), text=query)
+	else:	
+		return render_template('hello.html', message='Welcome to Photoshare', contributions=getUserContributions(), popular_tags=getMostPopularTags())
+
+def getCSearch(text):
+	cursor = conn.cursor()
+	cursor.execute("select u.first_name, u.last_name, count(*), u.user_id from users u, comments c where c.comment = '{0}' and c.user_id = u.user_id GROUP BY user_id ORDER BY count(*) DESC".format(text))
+	return cursor.fetchall()
 
 if __name__ == "__main__":
 	#this is invoked when in the shell  you run
