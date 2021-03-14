@@ -1,0 +1,86 @@
+<head>
+    <title>Photo</title>
+    <style>
+    img {
+      width: 250px;
+    }
+
+    table {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+    <body>
+    	{% if photo %}
+		<li>{{photo[2]}}<br />
+        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+        <li>Likes: {{photo[4]}} 
+        	{% if uid %}
+{% if uid != photo[3] and button %}
+          <form method="post" enctype="multipart/form-data" action="/photo/{{photo[1]}}">
+                <input type="submit" name="submit" value="Like" />
+            </form>
+          {% endif %}
+
+          {% if uid != photo[3] and not button %}
+          <form method="post" enctype="multipart/form-data" action="/photo/{{photo[1]}}">
+                <input type="submit" name="submit" value="Unlike" />
+            </form>
+          {% endif %}
+          {% endif %}
+
+			<h3>
+  			People who liked this photo
+  			</h3>
+        {% if liked %}
+			<table>
+  			<tr>
+    		<th>
+      		First Name
+    		</th>
+    		<th>
+      		Last Name
+    		</th>
+  			</tr>
+  		{% for row in liked %}
+   			<tr>
+    		<td>{{row[1]}}</td>
+    		<td>{{row[2]}}</td>
+  			</tr>
+  		{% endfor %}
+  		</table>
+  		{% endif %}
+
+      <h3>Comments</h3>
+      {% if comments %}
+      <ul>
+      {% for row in comments %}
+        <li>
+          <h4>{{row[1]}}
+            {% if row[2] == uid %}
+            - Left by you
+            {% endif %}
+          </h4>
+          <p>{{row[0]}}</p>
+        </li>
+      {% endfor %}
+    </ul>
+      {% endif %}
+
+{% if photo[3] != uid or not uid %}
+<form method="post" enctype="multipart/form-data" action="/photo/{{photo[1]}}">
+                <textarea id="comment" name="comment" placeholder="Comment..." required rows="4" cols="50" ></textarea>
+                <input type="submit" name="submit" value="Comment" />
+            </form>
+{% endif %}
+        	{% endif %}
+
+
+
+    	{% if not photo %}
+    		<div class="title">
+            <h1>There is no photo associated with this photo id<h1>
+        </div>
+		{% endif %}
+		<a href="/">Go Home</a>
+    </body>

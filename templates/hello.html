@@ -25,9 +25,13 @@
     {% for photo in photos %}
 
         <li>{{photo[2]}}<br />
-        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/><a href="/photo/{{photo[1]}}">More Info</a></li>
     {% endfor %}
     </ul>
+{% endif %}
+
+{% if not photos and name %}
+<h2>You have no photos</h2>
 {% endif %}
 
 {% if photos and not name %}
@@ -35,7 +39,7 @@
     <ul>
     {% for photo in photos %}
         <li>{{photo[2]}}<br />
-        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/><a href="/photo/{{photo[1]}}">More Info</a></li>
     {% endfor %}
     </ul>
 {% endif %}
@@ -62,6 +66,7 @@
 <li><a href='/upload'>Upload a photo</a></li>
 <li><a href='/browsePhotos'>Browse photos</a></li>
 <li><a href='/browsePublic'>Browse public photos</a></li>
+<li><a href='/browsePublicAlbums'>Browse public albums</a></li>
 <li><a href='/createAlbum'>Create an album</a></li>
 <li><a href='/deleteAlbum'>Delete an album</a></li>
 <li><a href='/browseAlbum'>Browse your albums</a></li>
