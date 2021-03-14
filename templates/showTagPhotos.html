@@ -23,7 +23,7 @@
     <ul>
         {% for photo in photo_list[ 1 ] %}
             <li>
-                {{photo[1]}},{{photo[2]}}<br />
+                {{photo[2]}}<br />
                 <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
             </li>
         {% endfor %}

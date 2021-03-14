@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<head>
+    <style>
+      table, th, td {
+        border: 1px solid black;
+      }
+  
+      img {
+        width: 250px;
+      }
+    </style>
+</head>
+
+<h1>Search Photos by entering tags!</h1>
+<a href='/'>Home</a>
+
+<form method="post" enctype="multipart/form-data" action="/browsePhotosByTag">
+    <label for="tags">Enter one or more tags separated by spaces:</label>
+    <input type="text" name="tags" required='true' /><br />
+    <input type="submit" value="Search by Tags" />
+</form>
+
+{% if photo_list %}
+<div class="tag-photos">
+    <ul>
+        {% for photo in photo_list %}
+            <li>
+                {{photo[2]}}<br />
+                <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}

@@ -5,6 +5,11 @@
 <div class="wrapper">
     <div class="user-tags">
         <h2>Below are the tags that your photos are associated with. Select one to see all photos with that tag.</h2>
+        {% if user_tags %}
+            {% for tag in user_tags %}
+            <a href="/browsetags/showtagphotos/{{tag}}">{{tag}}</a> 
+            {% endfor %}
+        {% endif %}
     </div>
 
     <div class="all-tags">
