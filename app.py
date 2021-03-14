@@ -599,11 +599,20 @@ def hello():
 		query = request.form.get('cSearch')
 		return render_template('comments.html', comments=getCSearch(query), text=query)
 	else:	
-		return render_template('hello.html', message='Welcome to Photoshare', contributions=getUserContributions(), popular_tags=getMostPopularTags())
+		if (flask_login.current_user.is_authenticated):
+			uid = getUserIdFromEmail(flask_login.current_user.id)
+			return render_template('hello.html', message='Welcome to Photoshare', contributions=getUserContributions(), popular_tags=getMostPopularTags(), uid=uid, likeRecommendation=likeRecommendation(uid))
+		else:
+			return render_template('hello.html', message='Welcome to Photoshare', contributions=getUserContributions(), popular_tags=getMostPopularTags())
 
 def getCSearch(text):
 	cursor = conn.cursor()
 	cursor.execute("select u.first_name, u.last_name, count(*), u.user_id from users u, comments c where c.comment = '{0}' and c.user_id = u.user_id GROUP BY user_id ORDER BY count(*) DESC".format(text))
+	return cursor.fetchall()
+
+def likeRecommendation(uid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT temp.picture_id, temp.user_id, count(temp.picture_id) from (SELECT * from pictures WHERE user_id != '{0}') temp, has_tag h WHERE h.picture_id = temp.picture_id AND h.tag_label IN (select t.tag_label from (SELECT t.tag_label FROM users u, pictures p, has_tag t WHERE u.user_id = p.user_id and p.picture_id = t.picture_id and p.user_id = '{0}' GROUP by t.tag_label ORDER BY Count(t.tag_label) DESC  LIMIT 5) t) GROUP BY temp.picture_id ORDER BY count(temp.picture_id) DESC ".format(uid))
 	return cursor.fetchall()
 
 if __name__ == "__main__":

@@ -70,7 +70,6 @@
 <li><a href='/createAlbum'>Create an album</a></li>
 <li><a href='/deleteAlbum'>Delete an album</a></li>
 <li><a href='/browseAlbum'>Browse your albums</a></li>
-<li><a href='/test'>TestLink</a></li>
 {% if name %}
 <li><a href='/friends'>Search and Add Friends</a></li>
 {% endif %}
@@ -130,7 +129,37 @@
 
 {% endif %}
 
+{% if uid %}
+<h3>You may also like</h3>
+<table>
+  <tr>
+    <th>
+      Photo 
+    </th>
+    <th>
+      Link
+    </th>
+    <th>
+      Number of matched tags
+    </th>
+  </tr>
+{% for row in likeRecommendation %}
+<tr>
+<td>
+  Photo {{row[0]}}
+</td>
+<td>
+  <a href="/photo/{{row[0]}}">More info</a>
+  </td>
+  <td>
+    {{row[2]}}
+  </td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
 </ul>
+
 
 <form method="post" enctype="multipart/form-data" action="/">
   <label for="cSearch">Search comments</label><br>
