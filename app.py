@@ -418,7 +418,7 @@ def getDBQuery( query ):
 	return result
 
 
-def getUserTags( user_id ):
+def getUserTags( user_id ): 
 	print( "IN getUserTags FUNCTION" )
 	# First get list of user's photo's ids
 	photo_ids = getDBQuery( "SELECT picture_id FROM Pictures WHERE user_id={0}".format( user_id) )
@@ -443,7 +443,7 @@ def browsetags():
 	return render_template( 'browsetags.html', user_tags=getUserTags(user_id), all_tags=getAllTags() )
 
 def getPhotoData( user_id ):
-	print( "IN getPhotoData FUNCTION" )
+	#print( "IN getPhotoData FUNCTION" )
 	return getDBQuery( "SELECT picture_id, caption FROM Pictures WHERE user_id={0}".format(user_id) )
 
 def tagExists( taglabel ):
@@ -465,7 +465,6 @@ def addTagToPhoto( photo_id, taglabel ):
 
 @app.route("/addtags", methods=['GET','POST'])
 def addtags():
-	print( "Hello!" )
 	user_id = getUserIdFromEmail(flask_login.current_user.id)
 	if request.method == 'POST':
 		photo_id = request.form.get('photo')
@@ -493,16 +492,40 @@ def addtags():
 		# If yes, send message to user saying photo already has this tag
 		# If not, add tag to photo and send success message to user
 		
-
 	return render_template( 'tags.html', photos=getPhotoData( user_id ) )
 
+
+## Get the picture data -> returns a tuple of the form ( tag, list of picture data that has tag )
+def getPhotosWithTag( tag ):	
+	return ( tag, getDBQuery( "SELECT P.imgdata, P.picture_id, P.caption, T.tag_label FROM Pictures P INNER JOIN has_tag T ON P.picture_id = T.picture_id AND T.tag_label = \"{0}\"".format( tag ) ) )
+
+# Renders showTagPhotos.html with all the photos that 
+# 	have the associated tag specified in the url by 
+# 	the 'tag' variable
+@app.route("/<prevpage>/showtagphotos/<tag>", methods=['GET'] )
+def showTagPhotos( prevpage, tag ):
+	user_id = getUserIdFromEmail(flask_login.current_user.id)
+	return render_template( 'showTagPhotos.html', prev_page=prevpage, photo_list=getPhotosWithTag( tag ), base64=base64 )
+
+def getMostPopularTags():
+	#Generate list of the most popular tags ( make list of 10 tags ) on the website
+	print( "Now in getMostPopularTags() function!" )
+	return getDBQuery(  "SELECT tag_label, COUNT(*) FROM has_tag GROUP BY tag_label ASC LIMIT 0, 10"  )
+
 # End Tags Code
+
+# Being Search Photos by Tag code
+@app.route( "/searchPhotosByTag", methods=['GET', 'POST'] )
+def searchPhotosByTags():
+	print( "Now in searchPhotosByTags() function!" )
+
+
 
 
 #default page
 @app.route("/", methods=['GET'])
 def hello():
-	return render_template('hello.html', message='Welecome to Photoshare', contributions=getUserContributions())
+	return render_template('hello.html', message='Welecome to Photoshare', contributions=getUserContributions(), popular_tags=getMostPopularTags() )
 
 if __name__ == "__main__":
 	#this is invoked when in the shell  you run

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<head>
+<style>
+    table, th, td {
+      border: 1px solid black;
+    }
+
+    img {
+      width: 250px;
+    }
+</style>
+</head>
+
+{% if prev_page=='browsetags' %}
+<a href='/browsetags'>Return to Browse Tags</a>
+{% endif %}
+{% if prev_page=='home' %}
+<a href='/'>Return to the Home Page</a>
+{% endif %}
+
+<div class="tag-photos">
+    <h2>All photos with the tag '{{ photo_list[ 0 ] }}'</h2>
+    <ul>
+        {% for photo in photo_list[ 1 ] %}
+            <li>
+                {{photo[1]}},{{photo[2]}}<br />
+                <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
+            </li>
+        {% endfor %}
+    </ul>
+</div>

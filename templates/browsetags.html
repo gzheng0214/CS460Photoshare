@@ -4,15 +4,16 @@
 
 <div class="wrapper">
     <div class="user-tags">
-        <h2>Below are tags that your photos are associated with. Select one to see all photos with that tag.</h2>
+        <h2>Below are the tags that your photos are associated with. Select one to see all photos with that tag.</h2>
     </div>
 
     <div class="all-tags">
         <h2>Below are all tags on this site. Select one to see all photos with that tag.</h2>
     {% if all_tags %}
         {% for tag in all_tags %}
-        <a href=''>{{tag}}</a> 
+        <a href="/browsetags/showtagphotos/{{tag}}">{{tag}}</a> 
         {% endfor %}
     {% endif %}
     </div>
+
 </div>

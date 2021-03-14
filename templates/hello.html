@@ -98,5 +98,30 @@
   </tr>
   {% endfor %}
   </table>
-</ul>
+
 {% endif %}
+
+{% if popular_tags %}
+<h3>
+  Top 10 Tags
+</h3>
+<table>
+  <tr>
+    <th>
+      Tag
+    </th>
+    <th>
+      # of Photos
+    </th>
+  </tr>
+  {% for tag in popular_tags %}
+  <tr>
+    <td><a href="/home/showtagphotos/{{tag[0]}}">{{tag[0]}}</a></td>
+    <td>{{tag[1]}}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+{% endif %}
+
+</ul>
