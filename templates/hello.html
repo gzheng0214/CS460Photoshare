@@ -30,6 +30,10 @@
     </ul>
 {% endif %}
 
+{% if not photos and name %}
+<h2>You have no photos</h2>
+{% endif %}
+
 {% if photos and not name %}
 <h2>Here are all the photos</h2>
     <ul>
