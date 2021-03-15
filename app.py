@@ -391,7 +391,7 @@ def friends():
 # BEGIN Tags Code
 
 def getDBQuery( query ):
-	print( "IN getDBQuery FUNCTION" )
+	#print( "IN getDBQuery FUNCTION" )
 	cursor = conn.cursor()
 	cursor.execute( query )
 	result = cursor.fetchall()
@@ -548,14 +548,11 @@ def getFriendsOfFriendsList( user_id ):
 									(Users.user_id=frnds.user2 AND frnds.user1 = {0} )'''.format( user_id ) )
 	
 	result = []
-	print( frnds )
-	print( frndOfFrnds )
 	for i in frndOfFrnds:
 		result.append( i )
 		for j in frnds:
 			if i[0] == j[0]:
 				result.remove( i )
-	print( frndOfFrnds )
 	return result
 
 
