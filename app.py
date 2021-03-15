@@ -399,15 +399,16 @@ def getDBQuery( query ):
 	return result
 
 
-def getUserTags( user_id ): 
+def getUserTags( user_id ):
 	print( "IN getUserTags FUNCTION" )
 	# First get list of user's photo's ids
-	photo_ids = getDBQuery( "SELECT picture_id FROM Pictures WHERE user_id={0}".format( user_id) )
-	print( photo_ids )
-	# Second get list of tags from has_tags where photo_id is in photo's ids
-	result = []
-	#for i in photo_ids:
-	return ['test_user_tag']
+	query = "SELECT DISTINCT T.tag_label FROM Pictures P INNER JOIN has_tag T ON P.picture_id = T.picture_id INNER JOIN Users U ON P.user_id = U.user_id WHERE U.user_id = \"{0}\"".format( user_id )
+	vals = getDBQuery( query )
+	tags = []
+	for i in vals:
+		tags.append( i[0] )
+	print( tags )
+	return tags
 
 
 def getAllTags():
@@ -419,6 +420,7 @@ def getAllTags():
 	return tags
 
 @app.route("/browsetags", methods=['GET'])
+@flask_login.login_required
 def browsetags():
 	user_id = getUserIdFromEmail(flask_login.current_user.id)
 	return render_template( 'browsetags.html', user_tags=getUserTags(user_id), all_tags=getAllTags() )
@@ -445,6 +447,7 @@ def addTagToPhoto( photo_id, taglabel ):
 	getDBQuery( "INSERT INTO has_tag ( picture_id, tag_label ) VALUES ( {0}, '{1}' )".format( photo_id, taglabel ) )
 
 @app.route("/addtags", methods=['GET','POST'])
+@flask_login.login_required
 def addtags():
 	user_id = getUserIdFromEmail(flask_login.current_user.id)
 	if request.method == 'POST':
@@ -485,10 +488,15 @@ def getPhotosWithTag( tag ):
 # 	the 'tag' variable
 @app.route("/<prevpage>/showtagphotos/<tag>", methods=['GET'] )
 def showTagPhotos( prevpage, tag ):
-	user_id = getUserIdFromEmail(flask_login.current_user.id)
 	return render_template( 'showTagPhotos.html', prev_page=prevpage, photo_list=getPhotosWithTag( tag ), base64=base64 )
 
 def getMostPopularTags():
+    #Generate list of the most popular tags ( make list of 10 tags ) on the website
+    cursor = conn.cursor()
+    cursor.execute("SELECT tag_label, COUNT(*) AS tagCount FROM has_tag GROUP BY tag_label ORDER BY tagCount DESC")
+    return cursor.fetchmany(size=10)
+
+def getMostPopularTags1():
 	#Generate list of the most popular tags ( make list of 10 tags ) on the website
 	cursor = conn.cursor()
 	cursor.execute("SELECT tag_label, COUNT(*) AS tagCount FROM has_tag GROUP BY tag_label ORDER BY tagCount DESC")
@@ -496,11 +504,59 @@ def getMostPopularTags():
 
 # End Tags Code
 
-# Being Search Photos by Tag code
-@app.route( "/searchPhotosByTag", methods=['GET', 'POST'] )
-def searchPhotosByTags():
-	print( "Now in searchPhotosByTags() function!" )
+# Search Photos by Tag code
+@app.route( "/browsePhotosByTag", methods=['GET', 'POST'] )
+def browsePhotosByTags():
+	print( "Now in browsePhotosByTags() function!" )
+	if request.method == 'POST':	# If post, get the tags from form, Query DB for all photos
+		tags = request.form.get('tags')
+		print( tags )
+		tags = (tags.strip()).split( " " )	# Get all tags by using delimiters
+		
+		# Run query to get all images associated with all tags
+		# Construct query to contain all the tags retrieved from the form.
+		query = "SELECT DISTINCT P.imgdata, P.picture_id, P.caption FROM Pictures P INNER JOIN has_tag ON P.picture_id = has_tag.picture_id WHERE"
+		for i in range( 0, len(tags) ):
+			query = query + " has_tag.tag_label=\"{0}\"".format( tags[i] )
+			if i != len(tags)-1:
+				query = query + " OR "
+		
+		photo_list = getDBQuery( query )
+		return render_template( 'browsePhotosByTags.html', photo_list=photo_list, base64=base64 )
 
+	return render_template( 'browsePhotosByTags.html' )
+
+def getFriendsOfFriendsList( user_id ):
+	query = '''SELECT DISTINCT
+					Users.email, Users.first_name, Users.last_name
+					FROM 
+						Users, has_friends, (SELECT U2.user_id FROM Users U2, (SELECT * FROM has_friends WHERE user1=2 OR user2={0}) AS frnds WHERE (U2.user_id=frnds.user1 AND frnds.user2 = {0}) or (U2.user_id=frnds.user2 AND frnds.user1 = {0})) AS frnds
+					WHERE 
+						( has_friends.user1 = frnds.user_id ) 
+						or 
+						( has_friends.user2 = Users.user_id )'''.format( user_id )
+	frndOfFrnds = getDBQuery( query )
+
+	frnds = getDBQuery( ''' 
+							SELECT 
+								Users.email, Users.first_name, Users.last_name 
+								FROM 
+									Users, (SELECT * FROM has_friends WHERE user1={0} OR user2=8) AS frnds 
+								WHERE 
+									(Users.user_id=frnds.user1 AND frnds.user2 = {0} ) 
+									or 
+									(Users.user_id=frnds.user2 AND frnds.user1 = {0} )'''.format( user_id ) )
+	
+	result = []
+	print( frnds )
+	print( frndOfFrnds )
+	for i in frndOfFrnds:
+		result.append( i )
+		for j in frnds:
+			if i[0] == j[0]:
+				result.remove( i )
+	print( frndOfFrnds )
+	return result
 
 
 def getPhoto(picture_id):
@@ -530,12 +586,12 @@ def photo(num):
 			comment = request.form.get('comment')
 			cursor = conn.cursor()
 			if (flask_login.current_user.is_authenticated):
-				cursor.execute("INSERT INTO comments (comment, user_id, picture_id, date) VALUES (%s, %s, %s, NOW())", (comment, uid, picture_id))
+				cursor.execute("INSERT INTO Comments (comment, user_id, picture_id, date) VALUES (%s, %s, %s, NOW())", (comment, uid, picture_id))
 				cursor.execute("UPDATE Users SET contributions = contributions + 1 WHERE user_id = '{0}'".format(uid))
 				conn.commit()
 				return flask.redirect(request.path)
 			else:
-				cursor.execute("INSERT INTO comments (comment, user_id, picture_id, date) VALUES (%s, NULL, %s, NOW())", (comment, picture_id))
+				cursor.execute("INSERT INTO Comments (comment, user_id, picture_id, date) VALUES (%s, NULL, %s, NOW())", (comment, picture_id))
 				conn.commit()
 				return flask.redirect(request.path)
 
@@ -547,7 +603,7 @@ def photo(num):
 
 def getComments(picture_id):
 	cursor = conn.cursor()
-	cursor.execute("SELECT comment, date, user_id FROM comments WHERE picture_id = '{0}' ORDER BY date ASC".format(picture_id))
+	cursor.execute("SELECT comment, date, user_id FROM Comments WHERE picture_id = '{0}' ORDER BY date ASC".format(picture_id))
 	return cursor.fetchall()
 
 def didUserLike(user_id, picture_id):
@@ -573,18 +629,18 @@ def hello():
 	else:	
 		if (flask_login.current_user.is_authenticated):
 			uid = getUserIdFromEmail(flask_login.current_user.id)
-			return render_template('hello.html', message='Welcome to Photoshare', contributions=getUserContributions(), popular_tags=getMostPopularTags(), uid=uid, likeRecommendation=likeRecommendation(uid))
+			return render_template('hello.html', message='Welcome to Photoshare', contributions=getUserContributions(), popular_tags=getMostPopularTags(), uid=uid, likeRecommendation=likeRecommendation(uid), friend_recommendations=getFriendsOfFriendsList(uid))
 		else:
 			return render_template('hello.html', message='Welcome to Photoshare', contributions=getUserContributions(), popular_tags=getMostPopularTags())
 
 def getCSearch(text):
 	cursor = conn.cursor()
-	cursor.execute("select u.first_name, u.last_name, count(*), u.user_id from users u, comments c where c.comment = '{0}' and c.user_id = u.user_id GROUP BY user_id ORDER BY count(*) DESC".format(text))
+	cursor.execute("select u.first_name, u.last_name, count(*), u.user_id from Users u, Comments c where c.comment = '{0}' and c.user_id = u.user_id GROUP BY user_id ORDER BY count(*) DESC".format(text))
 	return cursor.fetchall()
 
 def likeRecommendation(uid):
 	cursor = conn.cursor()
-	cursor.execute("SELECT temp.picture_id, temp.user_id, count(temp.picture_id) from (SELECT * from pictures WHERE user_id != '{0}') temp, has_tag h WHERE h.picture_id = temp.picture_id AND temp.picture_id NOT IN (SELECT picture_id from has_likes where user_id = '{0}') AND h.tag_label IN (select t.tag_label from (SELECT t.tag_label FROM users u, pictures p, has_tag t WHERE u.user_id = p.user_id and p.picture_id = t.picture_id and p.user_id = '{0}' GROUP by t.tag_label ORDER BY Count(t.tag_label) DESC  LIMIT 5) t) GROUP BY temp.picture_id ORDER BY count(temp.picture_id) DESC".format(uid))
+	cursor.execute("SELECT temp.picture_id, temp.user_id, count(temp.picture_id) from (SELECT * from Pictures WHERE user_id != '{0}') temp, has_tag h WHERE h.picture_id = temp.picture_id AND h.tag_label IN (select t.tag_label from (SELECT t.tag_label FROM Users u, Pictures p, has_tag t WHERE u.user_id = p.user_id and p.picture_id = t.picture_id and p.user_id = '{0}' GROUP by t.tag_label ORDER BY Count(t.tag_label) DESC  LIMIT 5) t) GROUP BY temp.picture_id ORDER BY count(temp.picture_id) DESC ".format(uid))
 	return cursor.fetchall()
 
 if __name__ == "__main__":
