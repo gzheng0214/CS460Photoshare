@@ -527,21 +527,32 @@ def browsePhotosByTags():
 	return render_template( 'browsePhotosByTags.html' )
 
 def getFriendsOfFriendsList( user_id ):
-	query = "SELECT U.email, U.first_name, U.last_name FROM Users U, ( SELECT has_friends.user2, COUNT(has_friends.user2) AS countFrndsOfFrnds FROM has_friends, (SELECT user2 FROM has_friends WHERE user1={0}) frnds WHERE user1 = frnds.user2 GROUP BY has_friends.user2 ORDER BY countFrndsOfFrnds DESC ) AS frndsOfFrnds WHERE U.user_id = frndsOfFrnds.user2".format( user_id )
+	query = '''SELECT DISTINCT
+					Users.email, Users.first_name, Users.last_name
+					FROM 
+						Users, has_friends, (SELECT U2.user_id FROM Users U2, (SELECT * FROM has_friends WHERE user1=2 OR user2={0}) AS frnds WHERE (U2.user_id=frnds.user1 AND frnds.user2 = {0}) or (U2.user_id=frnds.user2 AND frnds.user1 = {0})) AS frnds
+					WHERE 
+						( has_friends.user1 = frnds.user_id ) 
+						or 
+						( has_friends.user2 = Users.user_id )'''.format( user_id )
 	frndOfFrnds = getDBQuery( query )
-	frnds = getDBQuery( "SELECT Users.email, Users.first_name, Users.last_name FROM Users, (SELECT F.user2 FROM has_friends F WHERE F.user1={0}) AS frnds WHERE frnds.user2 = Users.user_id".format( user_id ) )
-	#"SELECT U.email, U.first_name, U.last_name FROM Users U, has_friends F WHERE U.user_id = F.user1 AND F.user1 = {0}".format( user_id ) )
 
-	print( frnds )
-	# Remove all current friends from the frndOfFrnds list
-	print( frndOfFrnds )
+	frnds = getDBQuery( ''' 
+							SELECT 
+								Users.email, Users.first_name, Users.last_name 
+								FROM 
+									Users, (SELECT * FROM has_friends WHERE user1={0} OR user2=8) AS frnds 
+								WHERE 
+									(Users.user_id=frnds.user1 AND frnds.user2 = {0} ) 
+									or 
+									(Users.user_id=frnds.user2 AND frnds.user1 = {0} )'''.format( user_id ) )
+	
 	result = []
+	print( frnds )
+	print( frndOfFrnds )
 	for i in frndOfFrnds:
 		result.append( i )
 		for j in frnds:
-			print( i )
-			print( j )
-			print()
 			if i[0] == j[0]:
 				result.remove( i )
 	print( frndOfFrnds )
