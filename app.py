@@ -636,9 +636,9 @@ def getCSearch(text):
 	return cursor.fetchall()
 
 def likeRecommendation(uid):
-	cursor = conn.cursor()
-	cursor.execute("SELECT temp.picture_id, temp.user_id, count(temp.picture_id) from (SELECT * from Pictures WHERE user_id != '{0}') temp, has_tag h WHERE h.picture_id = temp.picture_id AND h.tag_label IN (select t.tag_label from (SELECT t.tag_label FROM Users u, Pictures p, has_tag t WHERE u.user_id = p.user_id and p.picture_id = t.picture_id and p.user_id = '{0}' GROUP by t.tag_label ORDER BY Count(t.tag_label) DESC  LIMIT 5) t) GROUP BY temp.picture_id ORDER BY count(temp.picture_id) DESC ".format(uid))
-	return cursor.fetchall()
+    cursor = conn.cursor()
+    cursor.execute("SELECT temp.picture_id, temp.user_id, count(temp.picture_id) from (SELECT * from pictures WHERE user_id != '{0}') temp, has_tag h WHERE h.picture_id = temp.picture_id AND temp.picture_id NOT IN (SELECT picture_id from has_likes where user_id = '{0}') AND h.tag_label IN (select t.tag_label from (SELECT t.tag_label FROM users u, pictures p, has_tag t WHERE u.user_id = p.user_id and p.picture_id = t.picture_id and p.user_id = '{0}' GROUP by t.tag_label ORDER BY Count(t.tag_label) DESC  LIMIT 5) t) GROUP BY temp.picture_id ORDER BY count(temp.picture_id) DESC".format(uid))
+    return cursor.fetchall()
 
 if __name__ == "__main__":
 	#this is invoked when in the shell  you run
