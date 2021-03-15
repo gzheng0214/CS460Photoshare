@@ -504,7 +504,7 @@ def getMostPopularTags1():
 
 # End Tags Code
 
-# Being Search Photos by Tag code
+# Search Photos by Tag code
 @app.route( "/browsePhotosByTag", methods=['GET', 'POST'] )
 def browsePhotosByTags():
 	print( "Now in browsePhotosByTags() function!" )
@@ -522,13 +522,30 @@ def browsePhotosByTags():
 				query = query + " OR "
 		
 		photo_list = getDBQuery( query )
-
-
 		return render_template( 'browsePhotosByTags.html', photo_list=photo_list, base64=base64 )
 
-		
 	return render_template( 'browsePhotosByTags.html' )
 
+def getFriendsOfFriendsList( user_id ):
+	query = "SELECT U.email, U.first_name, U.last_name FROM Users U, ( SELECT has_friends.user2, COUNT(has_friends.user2) AS countFrndsOfFrnds FROM has_friends, (SELECT user2 FROM has_friends WHERE user1={0}) frnds WHERE user1 = frnds.user2 GROUP BY has_friends.user2 ORDER BY countFrndsOfFrnds DESC ) AS frndsOfFrnds WHERE U.user_id = frndsOfFrnds.user2".format( user_id )
+	frndOfFrnds = getDBQuery( query )
+	frnds = getDBQuery( "SELECT Users.email, Users.first_name, Users.last_name FROM Users, (SELECT F.user2 FROM has_friends F WHERE F.user1={0}) AS frnds WHERE frnds.user2 = Users.user_id".format( user_id ) )
+	#"SELECT U.email, U.first_name, U.last_name FROM Users U, has_friends F WHERE U.user_id = F.user1 AND F.user1 = {0}".format( user_id ) )
+
+	print( frnds )
+	# Remove all current friends from the frndOfFrnds list
+	print( frndOfFrnds )
+	result = []
+	for i in frndOfFrnds:
+		result.append( i )
+		for j in frnds:
+			print( i )
+			print( j )
+			print()
+			if i[0] == j[0]:
+				result.remove( i )
+	print( frndOfFrnds )
+	return result
 
 
 def getPhoto(picture_id):
@@ -601,18 +618,18 @@ def hello():
 	else:	
 		if (flask_login.current_user.is_authenticated):
 			uid = getUserIdFromEmail(flask_login.current_user.id)
-			return render_template('hello.html', message='Welcome to Photoshare', contributions=getUserContributions(), popular_tags=getMostPopularTags(), uid=uid, likeRecommendation=likeRecommendation(uid))
+			return render_template('hello.html', message='Welcome to Photoshare', contributions=getUserContributions(), popular_tags=getMostPopularTags(), uid=uid, likeRecommendation=likeRecommendation(uid), friend_recommendations=getFriendsOfFriendsList(uid))
 		else:
 			return render_template('hello.html', message='Welcome to Photoshare', contributions=getUserContributions(), popular_tags=getMostPopularTags())
 
 def getCSearch(text):
 	cursor = conn.cursor()
-	cursor.execute("select u.first_name, u.last_name, count(*), u.user_id from users u, comments c where c.comment = '{0}' and c.user_id = u.user_id GROUP BY user_id ORDER BY count(*) DESC".format(text))
+	cursor.execute("select u.first_name, u.last_name, count(*), u.user_id from Users u, Comments c where c.comment = '{0}' and c.user_id = u.user_id GROUP BY user_id ORDER BY count(*) DESC".format(text))
 	return cursor.fetchall()
 
 def likeRecommendation(uid):
 	cursor = conn.cursor()
-	cursor.execute("SELECT temp.picture_id, temp.user_id, count(temp.picture_id) from (SELECT * from pictures WHERE user_id != '{0}') temp, has_tag h WHERE h.picture_id = temp.picture_id AND h.tag_label IN (select t.tag_label from (SELECT t.tag_label FROM users u, pictures p, has_tag t WHERE u.user_id = p.user_id and p.picture_id = t.picture_id and p.user_id = '{0}' GROUP by t.tag_label ORDER BY Count(t.tag_label) DESC  LIMIT 5) t) GROUP BY temp.picture_id ORDER BY count(temp.picture_id) DESC ".format(uid))
+	cursor.execute("SELECT temp.picture_id, temp.user_id, count(temp.picture_id) from (SELECT * from Pictures WHERE user_id != '{0}') temp, has_tag h WHERE h.picture_id = temp.picture_id AND h.tag_label IN (select t.tag_label from (SELECT t.tag_label FROM Users u, Pictures p, has_tag t WHERE u.user_id = p.user_id and p.picture_id = t.picture_id and p.user_id = '{0}' GROUP by t.tag_label ORDER BY Count(t.tag_label) DESC  LIMIT 5) t) GROUP BY temp.picture_id ORDER BY count(temp.picture_id) DESC ".format(uid))
 	return cursor.fetchall()
 
 if __name__ == "__main__":

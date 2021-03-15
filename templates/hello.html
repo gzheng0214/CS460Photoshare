@@ -158,9 +158,39 @@
 {% endfor %}
 </table>
 {% endif %}
+
+
+{% if friend_recommendations %}
+<h3>You may also know...</h3>
+<table>
+  <tr>
+    <th>
+      Email
+    </th>
+    <th>
+      First Name
+    </th>
+    <th>
+      Last Name
+    </th>
+  </tr>
+  {% for friend in friend_recommendations %}
+  <tr>
+    <td>
+      {{ friend[ 0 ] }}
+    </td>
+    <td>
+      {{ friend[ 1 ] }}
+    </td>
+    <td>
+      {{ friend[ 2 ] }}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
 </ul>
-
-
 <form method="post" enctype="multipart/form-data" action="/">
   <label for="cSearch">Search comments</label><br>
   <input type="text" placeholder="Search for comments" id="cSearch" name="cSearch" > <br>
