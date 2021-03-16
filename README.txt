@@ -4,7 +4,8 @@ NOTE: For the #PASSWORD to the mysql database, we create a 'password.txt' file t
 
 For graders, please create a password.txt file in the same directory as the app.py file that has your database's 
         password and nothing else in it ( ideally, no new lines, spaces, or anything like that ). If this does
-        not work, you can email us ( Michael: mra88@bu.edu ), or you can always just change the #PASSWORD in app.py manually.
+        not work, you can email us ( Michael: mra88@bu.edu, Gavin: gzheng@bu.edu ), or you can always just change 
+	the #PASSWORD in app.py manually.
 	
 	
 
